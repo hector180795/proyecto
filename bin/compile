@@ -1,0 +1,30 @@
+#!/usr/bin/env ruby
+
+require 'tempfile'
+require 'fileutils'
+
+$stdout.sync = true
+
+def indent msg
+  puts "       #{msg}"
+end
+
+puts "-----> Found a .oracle.ini"
+
+indent "Downloading file from AWS..."
+result = `cd #{ARGV[0]}/vendor; wget --quiet https://s3-us-west-2.amazonaws.com/cdinger-heroku-binaries/instantclient_12_1.tar.gz`
+
+indent "Unpacking and Syslinking..."
+result = `cd #{ARGV[0]}/vendor; tar -zxf instantclient_12_1.tar.gz; cd instantclient_12_1; ln -s libclntsh.so.12.1 libclntsh.so`
+
+unless $?.success?
+  indent "Failure while downloading OCI8 archive: #{$?}"
+  exit 1
+end
+
+puts <<-CONF
+config_vars:
+  LD_LIBRARY_PATH: "#{ARGV[0]}/vendor/instantclient_12_1/"
+CONF
+
+indent "Done."
